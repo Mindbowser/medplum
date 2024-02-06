@@ -30,6 +30,7 @@ import {
   UserConfiguration,
   ValueSet,
 } from '@medplum/fhirtypes';
+import { getWebSocketUrl } from './utils';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 /** @ts-ignore */
 import type { CustomTableLayout, TDocumentDefinitions, TFontDictionary } from 'pdfmake/interfaces';
@@ -66,6 +67,7 @@ import {
 } from './outcomes';
 import { ReadablePromise } from './readablepromise';
 import { ClientStorage, IClientStorage } from './storage';
+import { SubscriptionEmitter, SubscriptionManager } from './subscriptions';
 import { indexSearchParameter } from './types';
 import { indexStructureDefinitionBundle, isDataTypeLoaded, isProfileLoaded, loadDataType } from './typeschema/types';
 import {
@@ -667,6 +669,7 @@ export class MedplumClient extends EventTarget {
   private readonly onUnauthenticated?: () => void;
   private readonly autoBatchTime: number;
   private readonly autoBatchQueue: AutoBatchEntry[] | undefined;
+  private subscriptionManager?: SubscriptionManager;
   private medplumServer?: boolean;
   private clientId?: string;
   private clientSecret?: string;
@@ -2222,13 +2225,13 @@ export class MedplumClient extends EventTarget {
     contentType?: string,
     options?: RequestInit
   ): Promise<any> {
-    let url;
+    let url: string | URL;
     if (typeof idOrIdentifier === 'string') {
       const id = idOrIdentifier;
       url = this.fhirUrl('Bot', id, '$execute');
     } else {
       const identifier = idOrIdentifier;
-      url = this.fhirUrl('Bot', '$execute') + `?identifier=${identifier.system}|${identifier.value}`;
+      url = this.fhirUrl('Bot', '$execute').toString() + `?identifier=${identifier.system}|${identifier.value}`;
     }
     return this.post(url, body, contentType, options);
   }
@@ -2883,7 +2886,7 @@ export class MedplumClient extends EventTarget {
 
   private async pollStatus<T>(statusUrl: string): Promise<T> {
     let checkStatus = true;
-    let resultResponse;
+    let resultResponse: Response;
     const retryDelay = 2000;
 
     while (checkStatus) {
@@ -2903,6 +2906,7 @@ export class MedplumClient extends EventTarget {
       }
       await sleep(retryDelay);
     }
+    // @ts-expect-error resultResponse will be defined by this point, since loop will spin until a result response is received
     return this.parseResponse(resultResponse as Response, 'POST', statusUrl);
   }
 
@@ -3502,6 +3506,44 @@ export class MedplumClient extends EventTarget {
     if (retryNumber >= maxRetries - 1) {
       throw err;
     }
+  }
+
+  private ensureSubscriptionManager(): void {
+    if (!this.subscriptionManager) {
+      this.subscriptionManager = new SubscriptionManager(
+        this,
+        new WebSocket(getWebSocketUrl('/ws/subscriptions-r4', this.baseUrl))
+      );
+    }
+  }
+
+  /**
+   *
+   *
+   * @param criteria - The criteria to subscribe to.
+   * @returns a `SubscriptionEmitter` that emits `Bundle` resources containing changes to resources based on the given criteria.
+   */
+  subscribeToCriteria(criteria: string): SubscriptionEmitter {
+    this.ensureSubscriptionManager();
+    return (this.subscriptionManager as SubscriptionManager).addCriteria(criteria);
+  }
+
+  /**
+   * @param criteria - The criteria to unsubscribe from.
+   */
+  async unsubscribeFromCriteria(criteria: string): Promise<void> {
+    if (!this.subscriptionManager) {
+      return;
+    }
+    await this.subscriptionManager.removeCriteria(criteria);
+    if (this.subscriptionManager.getCriteriaCount() === 0) {
+      this.subscriptionManager.closeWebSocket();
+    }
+  }
+
+  getMasterSubscriptionEmitter(): SubscriptionEmitter {
+    this.ensureSubscriptionManager();
+    return (this.subscriptionManager as SubscriptionManager).getMasterEmitter();
   }
 }
 
