@@ -21,20 +21,3 @@ export function mockFetch(
     });
   });
 }
-
-export function mockFetchWithStatus(
-  onFetch: (url: string, options?: any) => [number, any],
-  contentType = ContentType.FHIR_JSON
-): FetchLike & jest.Mock {
-  return jest.fn((url: string, options?: any) => {
-    const [status, response] = onFetch(url, options);
-    const responseStatus = isOperationOutcome(response) ? getStatus(response) : status;
-    return Promise.resolve({
-      ok: responseStatus < 400,
-      status: responseStatus,
-      headers: { get: () => contentType },
-      blob: () => Promise.resolve(response),
-      json: () => Promise.resolve(response),
-    });
-  });
-}
