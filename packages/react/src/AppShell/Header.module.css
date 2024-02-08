@@ -9,7 +9,10 @@
 }
 
 .user {
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  /* padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm); */
+  /* padding: 0; */
+  /* padding: 0 var(--mantine-spacing-sm); */
+  padding: 2px 4px;
   border-radius: var(--mantine-radius-sm);
   transition: background-color 100ms ease;
 
