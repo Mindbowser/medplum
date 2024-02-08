@@ -3508,13 +3508,14 @@ export class MedplumClient extends EventTarget {
     }
   }
 
-  private ensureSubscriptionManager(): void {
+  private getSubscriptionManager(): SubscriptionManager {
     if (!this.subscriptionManager) {
       this.subscriptionManager = new SubscriptionManager(
         this,
         new WebSocket(getWebSocketUrl('/ws/subscriptions-r4', this.baseUrl))
       );
     }
+    return this.subscriptionManager;
   }
 
   /**
@@ -3524,8 +3525,7 @@ export class MedplumClient extends EventTarget {
    * @returns a `SubscriptionEmitter` that emits `Bundle` resources containing changes to resources based on the given criteria.
    */
   subscribeToCriteria(criteria: string): SubscriptionEmitter {
-    this.ensureSubscriptionManager();
-    return (this.subscriptionManager as SubscriptionManager).addCriteria(criteria);
+    return this.getSubscriptionManager().addCriteria(criteria);
   }
 
   /**
@@ -3542,8 +3542,7 @@ export class MedplumClient extends EventTarget {
   }
 
   getMasterSubscriptionEmitter(): SubscriptionEmitter {
-    this.ensureSubscriptionManager();
-    return (this.subscriptionManager as SubscriptionManager).getMasterEmitter();
+    return this.getSubscriptionManager().getMasterEmitter();
   }
 }
 
