@@ -9,7 +9,7 @@ set -e
 set -x
 
 # Set node options
-export NODE_OPTIONS='--max-old-space-size=5120'
+export NODE_OPTIONS='--max-old-space-size=6144'
 
 # Diagnostics
 node --version
