@@ -20,6 +20,8 @@ For example, if using AWS Parameter Store for your configuration settings, you w
 
 For more details, see the [Config Settings](/docs/self-hosting/config-settings) guide.
 
+Before deploying your first Bot, make sure you have deployed bot layer to make your AWS Lambdas work.
+
 ## Configure the bot
 
 After the `botCustomFunctionsEnabled` config setting is set to `true`, the server will look for a FHIR Identifier with system `https://medplum.com/bot-external-function-id` for the AWS Lambda function name.
