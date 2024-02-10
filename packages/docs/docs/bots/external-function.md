@@ -20,7 +20,7 @@ For example, if using AWS Parameter Store for your configuration settings, you w
 
 For more details, see the [Config Settings](/docs/self-hosting/config-settings) guide.
 
-Before deploying your first Bot, make sure you have deployed bot layer to make your AWS Lambdas work.
+Before deploying your first Bot, make sure you have deployed the [bot layer](/docs/bots/bot-lambda-layer#a-note-for-self-hosters) to make your AWS Lambdas work.
 
 ## Configure the bot
 
